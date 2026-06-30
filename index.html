@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fazliddin Umarkulov | Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0c;
+  --bg2:      #111114;
+  --bg3:      #18181d;
+  --bg-t:     rgba(10,10,12,0.93);
+  --bg2-t:    rgba(17,17,20,0.93);
+  --bg3-t:    rgba(24,24,29,0.9);
+  --line:     rgba(255,255,255,0.07);
+  --line2:    rgba(255,255,255,0.04);
+  --red:      #c0392b;
+  --red-dim:  rgba(192,57,43,0.15);
+  --red-border: rgba(192,57,43,0.35);
+  --gold:     #c9a84c;
+  --gold-dim: rgba(201,168,76,0.12);
+  --white:    #f0ede8;
+  --muted:    #7a7872;
+  --dim:      #3e3c39;
+  --mono:     'Space Mono', monospace;
+  --serif:    'DM Serif Display', serif;
+  --sans:     'DM Sans', sans-serif;
+  --sidebar:  260px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-t);
+  color: var(--white);
+  font-family: var(--sans);
+  font-weight: 300;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ─── 3D / CURSOR CANVAS LAYERS ─── */
+#cursor-canvas {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 9999; pointer-events: none;
+}
+#webgl-canvas {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 0; pointer-events: auto;
+}
+.main, .sidebar { position: relative; z-index: 2; }
+.main { pointer-events: none; }
+.section { pointer-events: auto; }
+.sidebar { pointer-events: auto; }
+
+/* ─── MOBILE TOPBAR / HAMBURGER ─── */
+.mobile-topbar { display: none; }
+.mobile-menu-overlay { display: none; }
+
+@media (max-width: 900px) {
+  .mobile-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    position: fixed; top: 0; left: 0; right: 0; height: 60px;
+    background: rgba(8,8,10,0.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 0 1.2rem; z-index: 200; pointer-events: auto;
+  }
+  .mt-logo { font-family: var(--serif); font-size: 1rem; color: var(--white); }
+  .mt-logo em { font-style: italic; color: var(--red); }
+  .mt-burger {
+    width: 36px; height: 36px; border: 1px solid var(--dim); border-radius: 3px;
+    background: none; color: var(--white); font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .mobile-menu-overlay {
+    position: fixed; inset: 0; z-index: 250;
+    background: rgba(6,6,8,0.98);
+    display: flex; flex-direction: column;
+    padding: 5.5rem 2rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+    pointer-events: auto;
+  }
+  .mobile-menu-overlay.open { transform: translateX(0); }
+  .mm-close {
+    position: absolute; top: 1.2rem; right: 1.2rem;
+    width: 36px; height: 36px; border: 1px solid var(--dim); border-radius: 3px;
+    background: none; color: var(--white); font-size: 1rem; cursor: pointer;
+  }
+  .mm-lang { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+  .mm-nav { display: flex; flex-direction: column; gap: 0.3rem; }
+  .mm-nav a {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 0.5rem; text-decoration: none; color: var(--muted);
+    font-size: 1rem; border-bottom: 1px solid var(--line2);
+    position: relative; overflow: hidden; isolation: isolate;
+    transition: color 0.25s, background 0.25s;
+  }
+  .mm-nav a::after {
+    content: '';
+    position: absolute;
+    left: var(--mx, 50%); top: var(--my, 50%);
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(192,57,43,0.25) 35%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    filter: blur(6px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(.16,1,.3,1), opacity 0.4s;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: screen;
+  }
+  .mm-nav a.glass-active::after { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .mm-nav a.glass-active { color: var(--white); background: rgba(255,255,255,0.05); backdrop-filter: blur(8px) saturate(160%); }
+  .mm-nav a i, .mm-nav a span { position: relative; z-index: 2; }
+  .mm-nav a i { width: 18px; color: var(--red); }
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar);
+  min-height: 100vh;
+  position: fixed; top: 0; left: 0;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--bg2);
+  z-index: 100;
+  padding: 2.5rem 0;
+}
+
+.sb-logo {
+  padding: 0 2rem 2.5rem;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+.sb-logo-top {
+  font-family: var(--serif);
+  font-size: 1.05rem; color: var(--white);
+  letter-spacing: 0.04em; line-height: 1.1;
+}
+.sb-logo-top em { font-style: italic; color: var(--red); }
+.sb-logo-sub {
+  font-family: var(--mono);
+  font-size: 0.58rem; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+/* lang */
+.sb-lang {
+  padding: 1.5rem 2rem;
+  display: flex; gap: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+.lb {
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em;
+  padding: 0.35rem 0.65rem; border: 1px solid var(--dim);
+  border-radius: 2px; background: none; color: var(--muted);
+  cursor: pointer; transition: all 0.2s;
+}
+.lb.active, .lb:hover { border-color: var(--red); color: var(--white); background: var(--red-dim); }
+
+/* nav */
+.sb-nav { flex: 1; padding: 1.5rem 0; }
+.sb-nav a {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.85rem 2rem;
+  text-decoration: none; color: var(--muted);
+  font-family: var(--sans); font-size: 0.8rem;
+  font-weight: 400; letter-spacing: 0.06em;
+  transition: color 0.25s, background 0.25s, transform 0.3s;
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.sb-nav a::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 0; background: var(--red); transition: width 0.25s; z-index: 2;
+}
+.sb-nav a::after {
+  content: '';
+  position: absolute;
+  left: var(--mx, 50%); top: var(--my, 50%);
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(192,57,43,0.22) 35%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  filter: blur(6px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(.16,1,.3,1), opacity 0.4s;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+.sb-nav a:hover, .sb-nav a.active {
+  color: var(--white);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  transform: translateX(3px);
+}
+.sb-nav a:hover::after { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+.sb-nav a:hover::before, .sb-nav a.active::before { width: 3px; }
+.sb-nav a i, .sb-nav a span { position: relative; z-index: 2; }
+.sb-nav a i { width: 16px; text-align: center; font-size: 0.78rem; }
+
+/* sidebar bottom */
+.sb-bottom {
+  padding: 2rem;
+  border-top: 1px solid var(--line);
+}
+.sb-status {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #2ecc71; box-shadow: 0 0 6px #2ecc71;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ─── MAIN ─── */
+.main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  min-height: 100vh;
+}
+
+/* ─── SECTION BASE ─── */
+.section {
+  padding: 6rem 5rem;
+  border-bottom: 1px solid var(--line);
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+}
+
+.s-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.62rem; letter-spacing: 0.35em;
+  text-transform: uppercase; color: var(--red);
+  margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.8rem;
+}
+.s-eyebrow::after { content: ''; flex: 0 0 30px; height: 1px; background: var(--red); }
+
+.s-title {
+  font-family: var(--serif);
+  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  line-height: 1.05; color: var(--white);
+  margin-bottom: 2.5rem;
+}
+.s-title em { font-style: italic; color: var(--muted); }
+
+/* ─── HERO ─── */
+#hero {
+  background:
+    radial-gradient(ellipse 55% 70% at 90% 30%, rgba(192,57,43,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 10% 80%, rgba(201,168,76,0.04) 0%, transparent 60%),
+    var(--bg-t);
+  min-height: 100vh; justify-content: flex-end;
+  padding-bottom: 5rem;
+  position: relative;
+}
+
+.hero-label {
+  font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 2rem;
+}
+
+.hero-name {
+  font-family: var(--serif);
+  font-size: clamp(3.5rem, 7vw, 6.5rem);
+  line-height: 0.95; margin-bottom: 2rem;
+}
+.hero-name em { font-style: italic; color: var(--red); display: block; }
+
+.hero-desc {
+  max-width: 520px; font-size: 1rem;
+  color: var(--muted); line-height: 1.8;
+  margin-bottom: 3rem; font-weight: 300;
+}
+
+.hero-pills {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 3.5rem;
+}
+.pill {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 0.1em; padding: 0.45rem 1rem;
+  border: 1px solid var(--dim); border-radius: 50px;
+  color: var(--muted); background: rgba(255,255,255,0.02);
+}
+
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn {
+  font-family: var(--sans); font-size: 0.78rem;
+  font-weight: 500; letter-spacing: 0.08em;
+  padding: 0.85rem 2rem; border-radius: 3px;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 0.25s; display: inline-flex; align-items: center; gap: 0.6rem;
+}
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { background: #a93226; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--dim); }
+.btn-ghost:hover { border-color: var(--muted); color: var(--white); }
+
+/* ─── ABOUT ─── */
+#about { background: var(--bg2-t); }
+.about-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 5rem; align-items: start;
+}
+.portrait-col { position: relative; }
+.portrait-frame {
+  width: 300px; height: 390px;
+  position: relative;
+}
+.portrait-frame img {
+  width: 100%; height: 100%; object-fit: cover;
+  border-radius: 3px;
+  filter: grayscale(15%) contrast(1.05);
+  display: block;
+}
+.portrait-frame::before {
+  content: ''; position: absolute;
+  top: -10px; left: -10px; right: 10px; bottom: 10px;
+  border: 1px solid var(--red-border);
+  border-radius: 3px; z-index: -1;
+}
+.portrait-badge {
+  position: absolute; bottom: -1.2rem; right: -1.2rem;
+  background: var(--red); color: #fff;
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.12em; padding: 0.5rem 0.9rem;
+  border-radius: 2px;
+}
+
+.about-text p {
+  font-size: 0.97rem; color: var(--muted); line-height: 1.85;
+  margin-bottom: 1.4rem;
+}
+.about-text strong { color: var(--white); font-weight: 500; }
+
+.meta-list { margin-top: 2.5rem; border-top: 1px solid var(--line); padding-top: 2rem; }
+.meta-row {
+  display: grid; grid-template-columns: 130px 1fr;
+  gap: 1rem; padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line2);
+  font-size: 0.84rem;
+}
+.meta-k {
+  font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+  padding-top: 0.1rem;
+}
+.meta-v { color: var(--muted); }
+
+/* ─── SKILLS ─── */
+#skills { background: var(--bg-t); }
+.skills-layout { display: flex; flex-direction: column; gap: 3rem; }
+.skill-block-title {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 1.2rem;
+  padding-bottom: 0.8rem; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.skill-block-title i { color: var(--red); }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.tag {
+  font-family: var(--mono); font-size: 0.68rem;
+  letter-spacing: 0.06em; padding: 0.4rem 0.9rem;
+  border: 1px solid var(--dim); border-radius: 50px;
+  color: var(--muted); background: var(--bg3);
+  transition: all 0.2s; cursor: default;
+}
+.tag:hover { border-color: var(--red); color: var(--white); background: var(--red-dim); }
+
+/* ─── PROJECTS ─── */
+#projects { background: var(--bg2-t); }
+.proj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 4rem; }
+
+.proj-card {
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2.5rem 2rem;
+  position: relative; overflow: hidden;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.proj-card::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--red), transparent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s;
+}
+.proj-card:hover { border-color: rgba(192,57,43,0.4); transform: translateY(-3px); }
+.proj-card:hover::after { transform: scaleX(1); }
+
+.proj-idx {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.2em; color: var(--red); margin-bottom: 1rem;
+}
+.proj-name {
+  font-family: var(--serif); font-size: 1.5rem;
+  color: var(--white); line-height: 1.2; margin-bottom: 0.9rem;
+}
+.proj-body {
+  font-size: 0.88rem; color: var(--muted); line-height: 1.75;
+  margin-bottom: 1.5rem;
+}
+.proj-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  font-family: var(--mono); font-size: 0.62rem;
+  padding: 0.25rem 0.65rem; border-radius: 50px;
+  border: 1px solid var(--red-border); color: var(--red);
+  background: var(--red-dim);
+}
+
+/* timeline */
+.tl-wrap { position: relative; padding-left: 1.8rem; }
+.tl-wrap::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 1px; background: linear-gradient(to bottom, var(--red), transparent);
+}
+.tl-item { position: relative; padding: 0 0 2.5rem 2rem; }
+.tl-item::before {
+  content: ''; position: absolute; left: -1px; top: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--red);
+  transform: translateX(-50%);
+}
+.tl-date {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.15em; color: var(--gold); margin-bottom: 0.4rem;
+}
+.tl-title { font-size: 0.95rem; font-weight: 600; color: var(--white); margin-bottom: 0.35rem; }
+.tl-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+
+/* ─── ADVANTAGES ─── */
+#ustunliklar { background: var(--bg-t); }
+.adv-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.adv-main { grid-row: span 2; }
+
+.adv-card {
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2.5rem 2rem;
+  position: relative; overflow: hidden;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.adv-card:hover { border-color: rgba(192,57,43,0.4); transform: translateY(-2px); }
+
+.adv-main {
+  background: linear-gradient(135deg, var(--bg3) 60%, rgba(192,57,43,0.06) 100%);
+}
+
+.adv-ghost-num {
+  position: absolute; top: 1rem; right: 1.5rem;
+  font-family: var(--serif); font-size: 6rem;
+  color: rgba(255,255,255,0.03); line-height: 1;
+  user-select: none; pointer-events: none;
+}
+
+.adv-icon {
+  width: 48px; height: 48px; border-radius: 3px;
+  background: var(--red-dim); border: 1px solid var(--red-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; margin-bottom: 1.4rem; color: var(--red);
+}
+.adv-num-label {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.2em; color: var(--red); margin-bottom: 0.6rem;
+}
+.adv-title {
+  font-family: var(--serif); font-size: 1.4rem;
+  color: var(--white); line-height: 1.2; margin-bottom: 1rem;
+}
+.adv-body {
+  font-size: 0.88rem; color: var(--muted);
+  line-height: 1.8; margin-bottom: 1.5rem;
+}
+.adv-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.adv-tag {
+  font-family: var(--mono); font-size: 0.62rem;
+  padding: 0.28rem 0.65rem; border-radius: 50px;
+  border: 1px solid var(--dim); color: var(--muted);
+  background: rgba(255,255,255,0.02);
+  transition: all 0.2s;
+}
+.adv-tag:hover { border-color: var(--gold); color: var(--gold); }
+.adv-right-stack { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ─── CONTACT ─── */
+#contact { background: var(--bg2-t); min-height: unset; }
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
+.contact-note { font-size: 0.97rem; color: var(--muted); line-height: 1.8; }
+
+.c-channels { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+.c-link {
+  display: flex; align-items: center; gap: 1.4rem;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid var(--line); border-radius: 4px;
+  text-decoration: none; color: inherit;
+  background: var(--bg3);
+  transition: all 0.25s;
+}
+.c-link:hover { border-color: var(--red-border); background: var(--red-dim); }
+.c-ico {
+  width: 42px; height: 42px; border-radius: 3px;
+  background: var(--red); display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: #fff; flex-shrink: 0;
+}
+.c-type {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.c-val { font-size: 0.95rem; color: var(--white); margin-top: 0.2rem; }
+
+/* ─── FOOTER ─── */
+.sb-footer {
+  border-top: 1px solid var(--line);
+  padding: 2.5rem 5rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sf-copy {
+  font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.12em; color: var(--dim);
+}
+
+/* ─── LANG SWITCH ─── */
+[data-lang] { display: none; }
+.lang-en [data-lang="en"], .lang-ru [data-lang="ru"], .lang-uz [data-lang="uz"] { display: block; }
+.lang-en span[data-lang="en"], .lang-ru span[data-lang="ru"], .lang-uz span[data-lang="uz"] { display: inline; }
+
+/* ─── SCROLL REVEAL ─── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.revealed { opacity: 1; transform: none; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  :root { --sidebar: 0px; }
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding-top: 60px; }
+  .section { padding: 4rem 1.5rem; min-height: unset; }
+  .about-grid { grid-template-columns: 1fr; }
+  .portrait-frame { width: 100%; max-width: 280px; height: 360px; }
+  .proj-grid, .adv-layout, .contact-grid { grid-template-columns: 1fr; }
+  .adv-main { grid-row: span 1; }
+  .sb-footer { flex-direction: column; gap: 0.8rem; padding: 2rem 1.5rem; }
+  #cursor-canvas { display: none; }
+}
+</style>
+</head>
+<body class="lang-en">
+
+<canvas id="cursor-canvas"></canvas>
+<canvas id="webgl-canvas"></canvas>
+
+<div class="mobile-topbar">
+  <a href="#hero" class="mt-logo">Fazliddin <em>Umarkulov</em></a>
+  <button class="mt-burger" id="mtBurger" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+</div>
+
+<div class="mobile-menu-overlay" id="mmOverlay">
+  <button class="mm-close" id="mmClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  <div class="mm-lang">
+    <button class="lb" onclick="setLang('uz')">UZ</button>
+    <button class="lb" onclick="setLang('ru')">RU</button>
+    <button class="lb active" onclick="setLang('en')">EN</button>
+  </div>
+  <nav class="mm-nav">
+    <a href="#hero" class="mm-link"><i class="fa-solid fa-house"></i>
+      <span data-lang="en">Home</span><span data-lang="ru">Главная</span><span data-lang="uz">Bosh sahifa</span>
+    </a>
+    <a href="#about" class="mm-link"><i class="fa-solid fa-user"></i>
+      <span data-lang="en">About</span><span data-lang="ru">Обо мне</span><span data-lang="uz">Haqida</span>
+    </a>
+    <a href="#skills" class="mm-link"><i class="fa-solid fa-microchip"></i>
+      <span data-lang="en">Skills</span><span data-lang="ru">Навыки</span><span data-lang="uz">Ko'nikmalar</span>
+    </a>
+    <a href="#projects" class="mm-link"><i class="fa-solid fa-code-branch"></i>
+      <span data-lang="en">Projects</span><span data-lang="ru">Проекты</span><span data-lang="uz">Loyihalar</span>
+    </a>
+    <a href="#ustunliklar" class="mm-link"><i class="fa-solid fa-star"></i>
+      <span data-lang="en">Edge</span><span data-lang="ru">Преимущества</span><span data-lang="uz">Ustunliklar</span>
+    </a>
+    <a href="#contact" class="mm-link"><i class="fa-solid fa-paper-plane"></i>
+      <span data-lang="en">Contact</span><span data-lang="ru">Контакт</span><span data-lang="uz">Aloqa</span>
+    </a>
+  </nav>
+</div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <a href="#hero" class="sb-logo">
+    <div class="sb-logo-top">Fazliddin <em>Umarkulov</em></div>
+    <div class="sb-logo-sub">Portfolio · 2025</div>
+  </a>
+
+  <div class="sb-lang">
+    <button class="lb" onclick="setLang('uz')">UZ</button>
+    <button class="lb" onclick="setLang('ru')">RU</button>
+    <button class="lb active" onclick="setLang('en')">EN</button>
+  </div>
+
+  <nav class="sb-nav">
+    <a href="#hero"><i class="fa-solid fa-house"></i>
+      <span data-lang="en">Home</span><span data-lang="ru">Главная</span><span data-lang="uz">Bosh sahifa</span>
+    </a>
+    <a href="#about"><i class="fa-solid fa-user"></i>
+      <span data-lang="en">About</span><span data-lang="ru">Обо мне</span><span data-lang="uz">Haqida</span>
+    </a>
+    <a href="#skills"><i class="fa-solid fa-microchip"></i>
+      <span data-lang="en">Skills</span><span data-lang="ru">Навыки</span><span data-lang="uz">Ko'nikmalar</span>
+    </a>
+    <a href="#projects"><i class="fa-solid fa-code-branch"></i>
+      <span data-lang="en">Projects</span><span data-lang="ru">Проекты</span><span data-lang="uz">Loyihalar</span>
+    </a>
+    <a href="#ustunliklar"><i class="fa-solid fa-star"></i>
+      <span data-lang="en">Edge</span><span data-lang="ru">Преимущества</span><span data-lang="uz">Ustunliklar</span>
+    </a>
+    <a href="#contact"><i class="fa-solid fa-paper-plane"></i>
+      <span data-lang="en">Contact</span><span data-lang="ru">Контакт</span><span data-lang="uz">Aloqa</span>
+    </a>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-status">
+      <span class="dot"></span>
+      <span data-lang="en">Open to opportunities</span>
+      <span data-lang="ru">Открыт к предложениям</span>
+      <span data-lang="uz">Takliflarga ochiqman</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- HERO -->
+  <section class="section" id="hero">
+    <div class="hero-label">
+      Tashkent · Uzbekistan · TIUE
+    </div>
+    <h1 class="hero-name">
+      Fazliddin
+      <em>Umarkulov</em>
+    </h1>
+    <p class="hero-desc">
+      <span data-lang="en">Business discipline shaped by sales, now directed into practical security and AI systems.</span>
+      <span data-lang="ru">Бизнес-дисциплина, сформированная продажами, направленная в практическую безопасность и ИИ-системы.</span>
+      <span data-lang="uz">Savdo tomonidan shakllangan biznes intizomi endi amaliy xavfsizlik va AI tizimlarga yo'naltirilgan.</span>
+    </p>
+    <div class="hero-pills">
+      <span class="pill"><span data-lang="en">TIUE Student</span><span data-lang="ru">Студент TIUE</span><span data-lang="uz">TIUE talabasi</span></span>
+      <span class="pill"><span data-lang="en">Sales 2019–2023</span><span data-lang="ru">Продажи 2019–2023</span><span data-lang="uz">Savdo 2019–2023</span></span>
+      <span class="pill"><span data-lang="en">Cybersecurity</span><span data-lang="ru">Кибербезопасность</span><span data-lang="uz">Kiberbezopaslik</span></span>
+      <span class="pill"><span data-lang="en">AI Projects</span><span data-lang="ru">ИИ-проекты</span><span data-lang="uz">AI loyihalari</span></span>
+    </div>
+    <div class="hero-btns">
+      <a href="#projects" class="btn btn-red">
+        <i class="fa-solid fa-arrow-right"></i>
+        <span data-lang="en">View Projects</span><span data-lang="ru">Проекты</span><span data-lang="uz">Loyihalar</span>
+      </a>
+      <a href="#contact" class="btn btn-ghost">
+        <span data-lang="en">Get in Touch</span><span data-lang="ru">Связаться</span><span data-lang="uz">Bog'lanish</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <p class="s-eyebrow">
+      <span data-lang="en">About</span><span data-lang="ru">Обо мне</span><span data-lang="uz">Haqida</span>
+    </p>
+    <h2 class="s-title">
+      <span data-lang="en">Professional<br><em>Background</em></span>
+      <span data-lang="ru">Профессиональный<br><em>фон</em></span>
+      <span data-lang="uz">Professional<br><em>Biografiya</em></span>
+    </h2>
+    <div class="about-grid">
+      <div class="portrait-col reveal">
+        <div class="portrait-frame">
+          <img src="forportfolio.jpg" alt="Fazliddin Umarkulov">
+        </div>
+        <div class="portrait-badge">TIUE · Tashkent</div>
+      </div>
+      <div class="about-text reveal">
+        <p>
+          <span data-lang="en"><strong>Student at TIUE</strong>, currently channelling academic rigour into practical cybersecurity, penetration testing labs, and AI assistant development.</span>
+          <span data-lang="ru"><strong>Студент TIUE</strong>, совмещающий академическую строгость с практической кибербезопасностью, пентест-лабораториями и разработкой ИИ-ассистентов.</span>
+          <span data-lang="uz"><strong>TIUE talabasi</strong>, akademik bilimni amaliy kiberbezopaslik, penetratsion testlash laboratoriyalari va AI yordamchi ishlab chiqarish bilan uyg'unlashtirmoqda.</span>
+        </p>
+        <p>
+          <span data-lang="en">From <strong>2019 to 2023</strong>, built and led retail sales teams — five years that sharpened the ability to mentor people, manage pressure, and deliver measurable results in fast-moving environments. That grounding in real-world accountability shapes how every technical project is approached today.</span>
+          <span data-lang="ru">С <strong>2019 по 2023 год</strong> строил команды розничных продаж и руководил ими — пять лет, которые отточили умение наставлять людей, работать под давлением и достигать измеримых результатов.</span>
+          <span data-lang="uz"><strong>2019 yildan 2023 yilgacha</strong> chakana savdo jamoalarini barpo etdi va boshqardi — odamlarga murabbiylik qilish, bosim ostida ishlash va o'lchanadigan natijalar qo'lga kiritish mahoratini shakllantirgan besh yil.</span>
+        </p>
+        <p>
+          <span data-lang="en">Technical focus: <strong>ethical hacking methodologies</strong>, network security, and building AI-driven tools that solve real problems.</span>
+          <span data-lang="ru">Технический фокус: <strong>методологии этичного хакинга</strong>, сетевая безопасность и разработка инструментов на базе ИИ.</span>
+          <span data-lang="uz">Texnik yo'nalish: <strong>axloqiy xakerlik metodologiyalari</strong>, tarmoq xavfsizligi va haqiqiy muammolarni hal qiladigan AI vositalar yaratish.</span>
+        </p>
+        <div class="meta-list">
+          <div class="meta-row">
+            <span class="meta-k"><span data-lang="en">Institution</span><span data-lang="ru">Учебное заведение</span><span data-lang="uz">Muassasa</span></span>
+            <span class="meta-v">TIUE, Tashkent</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-k"><span data-lang="en">Experience</span><span data-lang="ru">Опыт</span><span data-lang="uz">Tajriba</span></span>
+            <span class="meta-v"><span data-lang="en">5 yrs retail sales & mentoring (2019–2023)</span><span data-lang="ru">5 лет розничные продажи и наставничество</span><span data-lang="uz">Chakana savdo va murabbiylik, 5 yil</span></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-k"><span data-lang="en">Focus</span><span data-lang="ru">Фокус</span><span data-lang="uz">Yo'nalish</span></span>
+            <span class="meta-v">Cybersecurity · Pentesting · AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="section" id="skills">
+    <p class="s-eyebrow">
+      <span data-lang="en">Core Competencies</span><span data-lang="ru">Компетенции</span><span data-lang="uz">Kompetentsiyalar</span>
+    </p>
+    <h2 class="s-title">
+      <span data-lang="en">Technical <em>Stack</em></span>
+      <span data-lang="ru">Технический <em>стек</em></span>
+      <span data-lang="uz">Texnik <em>stek</em></span>
+    </h2>
+    <div class="skills-layout">
+      <div class="skill-block reveal">
+        <div class="skill-block-title"><i class="fa-solid fa-desktop"></i>
+          <span data-lang="en">Operating Systems</span><span data-lang="ru">Операционные системы</span><span data-lang="uz">Operatsion tizimlar</span>
+        </div>
+        <div class="tags-wrap">
+          <span class="tag">Kali Linux</span>
+          <span class="tag">BlackArch Linux</span>
+          <span class="tag">Tails OS</span>
+          <span class="tag">Fedora</span>
+          <span class="tag">Windows Server</span>
+        </div>
+      </div>
+      <div class="skill-block reveal">
+        <div class="skill-block-title"><i class="fa-solid fa-shield-halved"></i>
+          <span data-lang="en">Cyber & Networks</span><span data-lang="ru">Кибер и сети</span><span data-lang="uz">Kiber va tarmoqlar</span>
+        </div>
+        <div class="tags-wrap">
+          <span class="tag"><span data-lang="en">Vulnerability Assessment</span><span data-lang="ru">Оценка уязвимостей</span><span data-lang="uz">Zaifliklarni baholash</span></span>
+          <span class="tag">Pentesting</span>
+          <span class="tag">Nmap</span>
+          <span class="tag">Sqlmap</span>
+          <span class="tag">Hydra</span>
+          <span class="tag">Hashcat</span>
+          <span class="tag">Wireshark</span>
+          <span class="tag">Burp Suite</span>
+          <span class="tag">Cisco Packet Tracer</span>
+          <span class="tag">GNS3</span>
+        </div>
+      </div>
+      <div class="skill-block reveal">
+        <div class="skill-block-title"><i class="fa-solid fa-code"></i>
+          <span data-lang="en">Development</span><span data-lang="ru">Разработка</span><span data-lang="uz">Ishlab chiqish</span>
+        </div>
+        <div class="tags-wrap">
+          <span class="tag">Python</span>
+          <span class="tag">Gemini API</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section" id="projects">
+    <p class="s-eyebrow">
+      <span data-lang="en">Selected Work</span><span data-lang="ru">Избранные работы</span><span data-lang="uz">Tanlangan ishlar</span>
+    </p>
+    <h2 class="s-title">
+      <span data-lang="en">Projects &<br><em>Milestones</em></span>
+      <span data-lang="ru">Проекты &<br><em>Вехи</em></span>
+      <span data-lang="uz">Loyihalar &<br><em>Yutuqlar</em></span>
+    </h2>
+    <div class="proj-grid">
+      <div class="proj-card reveal">
+        <div class="proj-idx">PROJECT — 01</div>
+        <h3 class="proj-name">Innomind Startup</h3>
+        <p class="proj-body">
+          <span data-lang="en">AI-driven 3D modeling and interface architecture prototype. Conceptualized and contributed to an intelligent platform bridging generative AI with spatial design workflows.</span>
+          <span data-lang="ru">Прототип архитектуры интерфейса и 3D-моделирования на базе ИИ. Участие в разработке платформы, объединяющей генеративный ИИ с пространственным дизайном.</span>
+          <span data-lang="uz">AI asosida 3D modellashtirish va interfeys arxitekturasi prototipi. Generativ AI ni fazoviy dizayn bilan bog'laydigan aqlli platformani ishlab chiqishda ishtirok.</span>
+        </p>
+        <div class="proj-chips">
+          <span class="chip">AI</span><span class="chip">3D</span><span class="chip">Startup</span>
+        </div>
+      </div>
+      <div class="proj-card reveal">
+        <div class="proj-idx">PROJECT — 02</div>
+        <h3 class="proj-name">Jarvis AI Voice Assistant</h3>
+        <p class="proj-body">
+          <span data-lang="en">A functional voice assistant built from scratch using Python and the Gemini API — designed for real conversational interaction, a working and deployable tool.</span>
+          <span data-lang="ru">Функциональный голосовой ассистент с нуля на Python и Gemini API — для реального разговорного взаимодействия, готовый к развёртыванию инструмент.</span>
+          <span data-lang="uz">Python va Gemini API yordamida noldan qurilgan funksional ovozli yordamchi — haqiqiy suhbat uchun mo'ljallangan, joylashtiriladigan vosita.</span>
+        </p>
+        <div class="proj-chips">
+          <span class="chip">Python</span><span class="chip">Gemini API</span><span class="chip">Voice AI</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="s-eyebrow" style="margin-bottom:2rem">
+      <span data-lang="en">Achievements</span><span data-lang="ru">Достижения</span><span data-lang="uz">Yutuqlar</span>
+    </p>
+    <div class="tl-wrap">
+      <div class="tl-item reveal">
+        <div class="tl-date">2023</div>
+        <div class="tl-title">School 21 — Selection Intensive</div>
+        <p class="tl-desc">
+          <span data-lang="en">Participated in the rigorous selection intensive for School 21 (Sber's peer-learning coding school), demonstrating problem-solving under structured evaluation.</span>
+          <span data-lang="ru">Участие в интенсивном отборочном этапе Школы 21 — демонстрация навыков решения задач в условиях структурированной оценки.</span>
+          <span data-lang="uz">School 21 (Sberning dasturlash maktabi) uchun qattiq tanlash intensivida ishtirok — tuzilgan baholash sharoitida muammolarni hal qilish qobiliyatini namoyish.</span>
+        </p>
+      </div>
+      <div class="tl-item reveal">
+        <div class="tl-date">2023–2024</div>
+        <div class="tl-title">Cisco Networking Academy</div>
+        <p class="tl-desc">
+          <span data-lang="en">Completed Cisco courses — networking protocols, infrastructure design, and packet-level analysis.</span>
+          <span data-lang="ru">Завершение курсов Cisco — сетевые протоколы, проектирование инфраструктуры и анализ пакетов.</span>
+          <span data-lang="uz">Cisco kurslarini tugatish — tarmoq protokollari, infratuzilma dizayni va paket tahlili.</span>
+        </p>
+      </div>
+      <div class="tl-item reveal">
+        <div class="tl-date">2024</div>
+        <div class="tl-title">Build with AI: Fintech Ideathon</div>
+        <p class="tl-desc">
+          <span data-lang="en">Participant — pitched AI-integrated solutions for fintech challenges alongside developers and entrepreneurs from the region.</span>
+          <span data-lang="ru">Участник — презентация ИИ-решений для финтех-задач вместе с разработчиками и предпринимателями региона.</span>
+          <span data-lang="uz">Ishtirokchi — mintaqadagi dasturchilar va tadbirkorlar bilan fintech muammolari uchun AI yechimlarni taqdim etish.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USTUNLIKLAR -->
+  <section class="section" id="ustunliklar">
+    <p class="s-eyebrow">
+      <span data-lang="en">Competitive Edge</span><span data-lang="ru">Преимущества</span><span data-lang="uz">Ustunliklar</span>
+    </p>
+    <h2 class="s-title">
+      <span data-lang="en">What Sets<br><em>Me Apart</em></span>
+      <span data-lang="ru">Мои сильные<br><em>стороны</em></span>
+      <span data-lang="uz">Mening<br><em>Ustunliklarim</em></span>
+    </h2>
+    <div class="adv-layout">
+
+      <div class="adv-card adv-main reveal">
+        <div class="adv-ghost-num">I</div>
+        <div class="adv-icon"><i class="fa-solid fa-handshake"></i></div>
+        <div class="adv-num-label">ADVANTAGE — 01</div>
+        <h3 class="adv-title">
+          <span data-lang="en">Sales Mastery — 5 Years of Real Results</span>
+          <span data-lang="ru">Мастерство продаж — 5 лет реальных результатов</span>
+          <span data-lang="uz">Savdo mahorati — 5 yillik haqiqiy natijalar</span>
+        </h3>
+        <p class="adv-body">
+          <span data-lang="en">Five years on the retail floor built more than numbers — they built character. Led and managed multiple employees, handled high-pressure customer interactions daily, and consistently moved product in competitive environments. Deep product knowledge, client psychology, and the ability to close — not as theory, but as muscle memory. Excellent communication, stress resilience, and hands-on goods management across the full sales cycle.</span>
+          <span data-lang="ru">Пять лет в розничных продажах сформировали не только цифры, но и характер. Руководство несколькими сотрудниками, ежедневная работа с клиентами под давлением, стабильные результаты в конкурентной среде. Знание продукта, психология клиента, управление товарами — не теория, а рефлекс. Отличная коммуникация и стрессоустойчивость.</span>
+          <span data-lang="uz">Chakana savdodagi besh yil faqat raqamlarni emas — xarakter ham shakllantirdi. Bir nechta xodimlarni boshqardim, har kuni yuqori bosimli mijozlar bilan muloqot qildim va raqobat muhitida doimiy ravishda tovarlarni sotdim. Chuqur mahsulot bilimlari, mijoz psixologiyasi, tovarlar bilan ishlash — nazariy emas, balki muskul xotirasi. Hush muomila, asab chidamliligi, ish boshqaruvi.</span>
+        </p>
+        <div class="adv-tags">
+          <span class="adv-tag"><span data-lang="en">Team Leadership</span><span data-lang="ru">Руководство</span><span data-lang="uz">Jamoa boshqaruvi</span></span>
+          <span class="adv-tag"><span data-lang="en">Client Relations</span><span data-lang="ru">Работа с клиентами</span><span data-lang="uz">Mijozlar bilan munosabat</span></span>
+          <span class="adv-tag"><span data-lang="en">Staff Mentoring</span><span data-lang="ru">Наставничество</span><span data-lang="uz">Xodimlarni o'qitish</span></span>
+          <span class="adv-tag"><span data-lang="en">Stress Resilience</span><span data-lang="ru">Стрессоустойчивость</span><span data-lang="uz">Asab chidamliligi</span></span>
+          <span class="adv-tag"><span data-lang="en">Goods Management</span><span data-lang="ru">Управление товарами</span><span data-lang="uz">Tovarlar bilan ishlash</span></span>
+          <span class="adv-tag"><span data-lang="en">Communication</span><span data-lang="ru">Коммуникация</span><span data-lang="uz">Muloqot</span></span>
+        </div>
+      </div>
+
+      <div class="adv-right-stack">
+        <div class="adv-card reveal">
+          <div class="adv-ghost-num">II</div>
+          <div class="adv-icon"><i class="fa-solid fa-chart-line"></i></div>
+          <div class="adv-num-label">ADVANTAGE — 02</div>
+          <h3 class="adv-title">
+            <span data-lang="en">Media Marketing & SMM</span>
+            <span data-lang="ru">Медиамаркетинг и SMM</span>
+            <span data-lang="uz">Media marketing va SMM</span>
+          </h3>
+          <p class="adv-body">
+            <span data-lang="en">Practical experience in social media marketing that directly drives sales — content, targeting, and platform presence that converts audiences into buyers. A rare overlap with sales strategy most technical candidates don't carry.</span>
+            <span data-lang="ru">Практический SMM, напрямую влияющий на продажи — контент, таргетинг, конверсия. Редкое пересечение с продажами.</span>
+            <span data-lang="uz">Savdoni bevosita oshiradigan SMM tajribasi — kontent, targeting, auditoriyani xaridorlarga aylantirish. Ko'pchilik texnik nomzodlarda bo'lmagan noyob ustunlik.</span>
+          </p>
+          <div class="adv-tags">
+            <span class="adv-tag">SMM</span>
+            <span class="adv-tag"><span data-lang="en">Content Strategy</span><span data-lang="ru">Контент-стратегия</span><span data-lang="uz">Kontent strategiyasi</span></span>
+            <span class="adv-tag"><span data-lang="en">Sales via Media</span><span data-lang="ru">Продажи через медиа</span><span data-lang="uz">Media orqali sotuv</span></span>
+          </div>
+        </div>
+
+        <div class="adv-card reveal">
+          <div class="adv-ghost-num">III</div>
+          <div class="adv-icon"><i class="fa-solid fa-laptop"></i></div>
+          <div class="adv-num-label">ADVANTAGE — 03</div>
+          <h3 class="adv-title">
+            <span data-lang="en">Digital Fluency & Documentation</span>
+            <span data-lang="ru">Цифровая грамотность и документация</span>
+            <span data-lang="uz">Raqamli savodxonlik va hujjatchilik</span>
+          </h3>
+          <p class="adv-body">
+            <span data-lang="en">Confident across professional computer environments — office suites, document management, digital workflows. Produces clean structured documentation and handles technical tools without friction.</span>
+            <span data-lang="ru">Уверенная работа в профессиональных ПК-средах — офисные пакеты, документооборот, цифровые процессы. Чёткая документация без затруднений.</span>
+            <span data-lang="uz">Professional kompyuter muhitlarida — ofis paketlari, hujjat boshqaruvi, raqamli jarayonlar. Toza, tuzilgan hujjatlar, texnik vositalar bilan ishonchli ishlash.</span>
+          </p>
+          <div class="adv-tags">
+            <span class="adv-tag"><span data-lang="en">PC Proficiency</span><span data-lang="ru">Уверенный ПК</span><span data-lang="uz">Kompyuter mahorati</span></span>
+            <span class="adv-tag"><span data-lang="en">Documentation</span><span data-lang="ru">Документация</span><span data-lang="uz">Hujjatchilik</span></span>
+            <span class="adv-tag"><span data-lang="en">Digital Workflows</span><span data-lang="ru">Цифровые процессы</span><span data-lang="uz">Raqamli jarayonlar</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section" id="contact">
+    <p class="s-eyebrow">
+      <span data-lang="en">Contact</span><span data-lang="ru">Контакт</span><span data-lang="uz">Aloqa</span>
+    </p>
+    <h2 class="s-title">
+      <span data-lang="en">Let's <em>Connect</em></span>
+      <span data-lang="ru">Свяжитесь <em>со мной</em></span>
+      <span data-lang="uz">Bog'<em>laning</em></span>
+    </h2>
+    <div class="contact-grid">
+      <p class="contact-note reveal">
+        <span data-lang="en">Open to conversations about cybersecurity, AI projects, collaboration, or opportunities. Reach out directly through any channel below.</span>
+        <span data-lang="ru">Открыт к разговорам о кибербезопасности, ИИ-проектах, сотрудничестве или возможностях. Пишите напрямую через любой из каналов.</span>
+        <span data-lang="uz">Kiberbezopaslik, AI loyihalari, hamkorlik yoki imkoniyatlar haqida suhbatlashishga tayyorman. Quyidagi kanallardan birida to'g'ridan-to'g'ri murojaat qiling.</span>
+      </p>
+      <ul class="c-channels reveal">
+        <li>
+          <a href="tel:+998886461325" class="c-link">
+            <div class="c-ico"><i class="fa-solid fa-phone"></i></div>
+            <div>
+              <div class="c-type"><span data-lang="en">Phone</span><span data-lang="ru">Телефон</span><span data-lang="uz">Telefon</span></div>
+              <div class="c-val">+998 88 646-13-25</div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="https://t.me/asiloovc" target="_blank" rel="noopener" class="c-link">
+            <div class="c-ico"><i class="fa-brands fa-telegram"></i></div>
+            <div>
+              <div class="c-type">Telegram</div>
+              <div class="c-val">@asiloovc</div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.instagram.com/asiloovc?igsh=dGp3dDhqN2k2eDl5&utm_source=qr" target="_blank" rel="noopener" class="c-link">
+            <div class="c-ico"><i class="fa-brands fa-instagram"></i></div>
+            <div>
+              <div class="c-type">Instagram</div>
+              <div class="c-val">@asiloovc</div>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="sb-footer">
+    <span class="sf-copy">© 2025 Fazliddin Umarkulov</span>
+    <span class="sf-copy" style="letter-spacing:0.3em">FAZLIDDIN UMARKULOV · PORTFOLIO</span>
+  </footer>
+
+</main>
+
+<script>
+function setLang(lang) {
+  document.body.className = 'lang-' + lang;
+  document.querySelectorAll('.lb').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+  });
+}
+
+// Sidebar active link on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.sb-nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.sb-nav a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.4 });
+sections.forEach(s => observer.observe(s));
+
+// Scroll reveal
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('revealed'); revealObs.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ─── LIQUID GLASS NAV HOVER/TOUCH ───
+(function () {
+  function bindGlass(selector, isTouchMode) {
+    document.querySelectorAll(selector).forEach(link => {
+      if (!isTouchMode) {
+        link.addEventListener('mousemove', (e) => {
+          const r = link.getBoundingClientRect();
+          link.style.setProperty('--mx', `${e.clientX - r.left}px`);
+          link.style.setProperty('--my', `${e.clientY - r.top}px`);
+        });
+      } else {
+        link.addEventListener('touchstart', (e) => {
+          if (!e.touches || !e.touches[0]) return;
+          const r = link.getBoundingClientRect();
+          link.style.setProperty('--mx', `${e.touches[0].clientX - r.left}px`);
+          link.style.setProperty('--my', `${e.touches[0].clientY - r.top}px`);
+          link.classList.add('glass-active');
+        }, { passive: true });
+        link.addEventListener('touchend', () => {
+          setTimeout(() => link.classList.remove('glass-active'), 350);
+        });
+      }
+    });
+  }
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  bindGlass('.sb-nav a', isTouch);
+  bindGlass('.mm-nav a', true);
+})();
+
+// ─── MOBILE MENU TOGGLE ───
+const mmOverlay = document.getElementById('mmOverlay');
+const mtBurger = document.getElementById('mtBurger');
+const mmClose = document.getElementById('mmClose');
+if (mtBurger) mtBurger.addEventListener('click', () => mmOverlay.classList.add('open'));
+if (mmClose) mmClose.addEventListener('click', () => mmOverlay.classList.remove('open'));
+document.querySelectorAll('.mm-link').forEach(a => a.addEventListener('click', () => mmOverlay.classList.remove('open')));
+
+// ─── 3D MATRIX + CURSOR TRAIL ENGINE ───
+(function () {
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+  // ---- Custom cursor particle trail (desktop / mouse only) ----
+  if (!isTouch) {
+    const cursorCanvas = document.getElementById('cursor-canvas');
+    const ctx = cursorCanvas.getContext('2d');
+    let pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const totalPoints = 12;
+    const points = Array(totalPoints).fill(0).map(() => ({ x: pointer.x, y: pointer.y }));
+
+    function resizeCursorCanvas() {
+      cursorCanvas.width = window.innerWidth;
+      cursorCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCursorCanvas);
+    resizeCursorCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+    });
+
+    const drawCursor = () => {
+      ctx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+      points[0].x += (pointer.x - points[0].x) * 0.4;
+      points[0].y += (pointer.y - points[0].y) * 0.4;
+      for (let i = 1; i < totalPoints; i++) {
+        points[i].x += (points[i - 1].x - points[i].x) * 0.35;
+        points[i].y += (points[i - 1].y - points[i].y) * 0.35;
+      }
+      for (let i = 0; i < totalPoints; i++) {
+        const ratio = (totalPoints - i) / totalPoints;
+        ctx.beginPath();
+        ctx.arc(points[i].x, points[i].y, 4 * ratio, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(192, 57, 43, ${0.8 * ratio})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(drawCursor);
+    };
+    drawCursor();
+  }
+
+  // ---- Three.js fragmenting matrix core ----
+  const canvas = document.querySelector('#webgl-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 9);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobile, alpha: true });
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.35;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+
+  const ambient = new THREE.AmbientLight(0xffffff, 1.3);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0xe0bd6a, 4);
+  dirLight.position.set(5, 10, 7);
+  scene.add(dirLight);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  fillLight.position.set(-6, -4, 5);
+  scene.add(fillLight);
+  const rimLight = new THREE.PointLight(0xc0392b, 6, 22);
+  rimLight.position.set(0, 0, 6);
+  scene.add(rimLight);
+
+  const structureGroup = new THREE.Group();
+  scene.add(structureGroup);
+
+  const blocksCount = isMobile ? 60 : 130;
+  const blockGeometry = new THREE.BoxGeometry(0.4, 0.25, 0.35);
+  const blockMaterial = new THREE.MeshStandardMaterial({ color: 0x55556a, roughness: 0.18, metalness: 0.82, emissive: 0x2a2a3a, emissiveIntensity: 0.85 });
+  const edgeLineMaterial = new THREE.LineBasicMaterial({ color: 0xe8c97a, transparent: true, opacity: 0.75 });
+
+  const originalPositions = [];
+  const blockMeshes = [];
+
+  for (let i = 0; i < blocksCount; i++) {
+    const mesh = new THREE.Mesh(blockGeometry, blockMaterial);
+    const phi = Math.acos(Math.random());
+    const theta = Math.random() * Math.PI * 2;
+    const radius = 2.1;
+
+    mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+    mesh.position.y = radius * Math.cos(phi) * 0.8;
+    mesh.position.z = radius * Math.sin(phi) * Math.sin(theta);
+    mesh.lookAt(0, mesh.position.y, 0);
+
+    structureGroup.add(mesh);
+
+    const edges = new THREE.EdgesGeometry(blockGeometry);
+    const edgeLines = new THREE.LineSegments(edges, edgeLineMaterial);
+    mesh.add(edgeLines);
+
+    blockMeshes.push(mesh);
+    originalPositions.push(mesh.position.clone());
+  }
+
+  const coreGeo = new THREE.SphereGeometry(0.4, 32, 32);
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0xc0392b, toneMapped: false, depthTest: false });
+  const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+  coreMesh.scale.set(0.5, 0.5, 0.5);
+  coreMesh.renderOrder = 2;
+
+  // Soft red glow halo around the core (always visible, even in dim rooms)
+  const glowCanvas = document.createElement('canvas');
+  glowCanvas.width = 128; glowCanvas.height = 128;
+  const gctx = glowCanvas.getContext('2d');
+  const grad = gctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(192,57,43,1.0)');
+  grad.addColorStop(0.3, 'rgba(192,57,43,0.7)');
+  grad.addColorStop(0.7, 'rgba(192,57,43,0.25)');
+  grad.addColorStop(1, 'rgba(192,57,43,0)');
+  gctx.fillStyle = grad;
+  gctx.fillRect(0, 0, 128, 128);
+  const glowTexture = new THREE.CanvasTexture(glowCanvas);
+  const glowMaterial = new THREE.SpriteMaterial({ map: glowTexture, transparent: true, depthWrite: false, depthTest: false, toneMapped: false });
+  const glowSprite = new THREE.Sprite(glowMaterial);
+  glowSprite.scale.set(3.8, 3.8, 1);
+  glowSprite.renderOrder = 1;
+  structureGroup.add(glowSprite);
+
+  structureGroup.add(coreMesh);
+
+  // Position the cluster at the marked spot: just right of / below the "Umarkulov" heading
+  structureGroup.position.set(isMobile ? 0 : 1.35, isMobile ? -1.5 : -0.55, isMobile ? -1.5 : 0.3);
+  structureGroup.scale.set(isMobile ? 0.85 : 1.25, isMobile ? 0.85 : 1.25, isMobile ? 0.85 : 1.25);
+
+  let isExploded = false;
+  const mouse = new THREE.Vector2();
+  const raycaster = new THREE.Raycaster();
+
+  function setMouseFromEvent(clientX, clientY) {
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+  }
+
+  function rotateTowards() {
+    if (typeof gsap !== 'undefined') {
+      gsap.to(structureGroup.rotation, { y: mouse.x * 0.5, x: -mouse.y * 0.3, duration: 0.8 });
+    } else {
+      structureGroup.rotation.y = mouse.x * 0.5;
+      structureGroup.rotation.x = -mouse.y * 0.3;
+    }
+  }
+
+  function toggleExplosion() {
+    raycaster.setFromCamera(mouse, camera);
+    if (raycaster.intersectObjects(blockMeshes).length > 0) {
+      if (!isExploded) {
+        blockMeshes.forEach((mesh, idx) => {
+          const target = {
+            x: originalPositions[idx].x * 3.5 + (Math.random() - 0.5) * 2,
+            y: originalPositions[idx].y * 3.5 + (Math.random() - 0.5) * 2,
+            z: originalPositions[idx].z * 3.5 + (Math.random() - 0.5) * 2
+          };
+          if (typeof gsap !== 'undefined') {
+            gsap.to(mesh.position, { ...target, duration: 1.2, ease: 'expo.out' });
+          } else {
+            mesh.position.set(target.x, target.y, target.z);
+          }
+        });
+        if (typeof gsap !== 'undefined') {
+          gsap.to(coreMesh.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1, ease: 'back.out' });
+        } else {
+          coreMesh.scale.set(1.5, 1.5, 1.5);
+        }
+        isExploded = true;
+      } else {
+        blockMeshes.forEach((mesh, idx) => {
+          const p = originalPositions[idx];
+          if (typeof gsap !== 'undefined') {
+            gsap.to(mesh.position, { x: p.x, y: p.y, z: p.z, duration: 1.2, ease: 'power3.out' });
+          } else {
+            mesh.position.copy(p);
+          }
+        });
+        if (typeof gsap !== 'undefined') {
+          gsap.to(coreMesh.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 0.8 });
+        } else {
+          coreMesh.scale.set(0.5, 0.5, 0.5);
+        }
+        isExploded = false;
+      }
+    }
+  }
+
+  if (!isTouch) {
+    window.addEventListener('mousemove', (e) => {
+      setMouseFromEvent(e.clientX, e.clientY);
+      rotateTowards();
+    });
+    window.addEventListener('click', toggleExplosion);
+  } else {
+    window.addEventListener('touchstart', (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      setMouseFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+      rotateTowards();
+      toggleExplosion();
+    }, { passive: true });
+  }
+
+  if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.to(structureGroup.position, {
+      scrollTrigger: { trigger: "#about", start: "top bottom", end: "bottom top", scrub: true },
+      x: isMobile ? -1 : -1.8, z: -1
+    });
+  }
+
+  const tick = () => {
+    coreMesh.rotation.y += 0.02;
+    renderer.render(scene, camera);
+    window.requestAnimationFrame(tick);
+  };
+  tick();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+</script>
+</body>
+</html>
